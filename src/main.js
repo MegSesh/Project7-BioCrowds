@@ -22,6 +22,16 @@ var clock = new THREE.Clock();
 var geometry = null;
 var particles = null;
 
+var guiVars = function() {
+  this.simulation1 = false;
+  this.simulation2 = false;
+}
+
+var guiVariables = {
+  SimulationType : 1
+}
+
+
 // ====================================================== ON LOAD FUNCTION ======================================================
 // called after the scene loads
 function onLoad(framework) {
@@ -41,6 +51,8 @@ function onLoad(framework) {
     camera.updateProjectionMatrix();
   });
 
+
+
   // ========================== SCENE SET UP ==========================
 
   //add a starfield to the background of a scene
@@ -54,6 +66,7 @@ function onLoad(framework) {
   }//end for loop
   var starsMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
   var starField = new THREE.Points( starsGeometry, starsMaterial );
+  starField.userData = { keepMe: true };
   scene.add( starField );
 
 
@@ -63,142 +76,78 @@ function onLoad(framework) {
   gridGeometry.translate(gridDivisions, 0.0, gridDivisions);  //move grid so that it starts at (0, 0, 0) on bottom left corner
   var gridMaterial = new THREE.MeshBasicMaterial( {color: 0xf00fff, side: THREE.DoubleSide, wireframe: true} );
   var grid = new THREE.Mesh( gridGeometry, gridMaterial );
+  grid.userData = { keepMe: true };
   scene.add( grid );
 
 
 
   // ========================== CREATE AND SCATTER MARKERS ==========================
   //scatter points randomly on grid using stratified sampling
-  var sampleDensity = 6;
-  var sqrtVal = gridDimension * sampleDensity;
-  var numSamples = sqrtVal * sqrtVal;
-  var invSqrtVal = 1.0 / (sqrtVal);
-  particles = new THREE.Geometry();
-
-  for(var i = 0; i < numSamples; i++)
-  {
-    var x = 1.0 * Math.floor(i % sqrtVal);
-    var y = 1.0 * Math.floor(i / sqrtVal);
-
-    var sample_X = (x + Math.random()) * gridDimension / sqrtVal;
-    var sample_Y = (y + Math.random()) * gridDimension / sqrtVal;
-
-    var sample = new THREE.Vector3(sample_X, 0.0, sample_Y);
-
-    var newMarker = new Marker(i, sample, [], -1);
-    globalMarkersList.push(newMarker);
-
-    particles.vertices.push(new THREE.Vector3(sample.x, sample.y, sample.z));
-  }//end for loop
-
-  var particleMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.25 } );
-  var particlesField = new THREE.Points(particles, particleMaterial);
-  scene.add(particlesField);
-
-
+  // var sampleDensity = 6;
+  // var sqrtVal = gridDimension * sampleDensity;
+  // var numSamples = sqrtVal * sqrtVal;
+  // var invSqrtVal = 1.0 / (sqrtVal);
+  // particles = new THREE.Geometry();
+  //
+  // for(var i = 0; i < numSamples; i++)
+  // {
+  //   var x = 1.0 * Math.floor(i % sqrtVal);
+  //   var y = 1.0 * Math.floor(i / sqrtVal);
+  //
+  //   var sample_X = (x + Math.random()) * gridDimension / sqrtVal;
+  //   var sample_Y = (y + Math.random()) * gridDimension / sqrtVal;
+  //
+  //   var sample = new THREE.Vector3(sample_X, 0.0, sample_Y);
+  //
+  //   var newMarker = new Marker(i, sample, [], -1);
+  //   globalMarkersList.push(newMarker);
+  //
+  //   particles.vertices.push(new THREE.Vector3(sample.x, sample.y, sample.z));
+  // }//end for loop
+  //
+  // var particleMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.15 } );
+  // var particlesField = new THREE.Points(particles, particleMaterial);
+  // particlesField.userData = {keepMe: true};
+  // scene.add(particlesField);
 
 
   // ========================== SPAWN AGENTS ==========================
   //spawn agents with specified goal points
-  for(var i = 0; i < numAgents; i++)
-  {
-    //starting positions both groups of agents are opposite sides of each other, with goals being the other side
-    var startPos = null;
-    var startVel = null;
-    var goal = null;
-    var startOrient = null;
-    var radius = null;
-    var agentMarkers = null;  //THIS SHOULD CONSTANTLY BE CHANGING. NEED TO CREATE FUNCTION THAT GIVES AGENT ITS MARKERS
-    var agent = null;
-    var agentMesh = null;
-
-    startPos = new THREE.Vector3(i, 0.0, 0.0);    //for 10 markers: i * 2.0 + 1, 0.0, 0.0
-    goal = new THREE.Vector3(i, 0.0, gridDimension);
-
-    startVel = new THREE.Vector3(0.0, 0.0, 0.0);
-    startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
-    radius = 3;
-    agentMarkers = [];
-
-    //create new mesh for the agent and assign its position and orientation with the ones above
-    var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
-    var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
-    agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
-    agentMesh.position.set(startPos.x, startPos.y, startPos.z);
-    scene.add( agentMesh );
-
-    agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
-    globalAgentsList.push(agent);
 
 
-    // if(i % 2 == 0)  //blue agent
-    // {
-    //   //startPos = new THREE.Vector3(i * 1.0 - (numAgents / 2) + 1.0, 0.0, -gridDivisions);
-    //   //goal = new THREE.Vector3(i * 1.0 - numAgents / 2 + 1.0, 0.0, gridDivisions);
-    //
-    //   startPos = new THREE.Vector3(i * 1.0 + 1.0, 0.0, 0.0);
-    //   goal = new THREE.Vector3(i * 1.0 + 1.0, 0.0, gridDimension);
-    //
-    //   startVel = new THREE.Vector3(0.0, 0.0, 0.0);
-    //   startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
-    //   radius = 3;
-    //   agentMarkers = [];
-    //
-    //   //create new mesh for the agent and assign its position and orientation with the ones above
-    //   var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
-    //   var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
-    //   agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
-    //   agentMesh.position.set(startPos.x, startPos.y, startPos.z);
-    //   scene.add( agentMesh );
-    //
-    //   agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
-    //   globalAgentsList.push(agent);
-    // }//end if
-    // else    //red agents
-    // {
-    //   //startPos = new THREE.Vector3(i * 1.0 - numAgents / 2, 0.0, gridDivisions);
-    //   //goal = new THREE.Vector3(i * 1.0 - (numAgents / 2), 0.0, -gridDivisions);
-    //
-    //   startPos = new THREE.Vector3(i * 1.0, 0.0, gridDimension);
-    //   goal = new THREE.Vector3(i * 1.0, 0.0, 0.0);
-    //
-    //   startVel = new THREE.Vector3(0.0, 0.0, 0.0);
-    //   startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
-    //   radius = 3;
-    //   agentMarkers = [];
-    //
-    //   //create new mesh for the agent and assign its position and orientation with the ones above
-    //   var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
-    //   var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
-    //   agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
-    //   agentMesh.position.set(startPos.x, startPos.y, startPos.z);
-    //   scene.add( agentMesh );
-    //
-    //   agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
-    //   globalAgentsList.push(agent);
-    // }//end else
+  gui.add(guiVariables, 'SimulationType', { Simulation1 : 1, Simulation2 : 2, Simulation3 : 3} ).onChange(function(newVal) {
+    //new val gets set to the value in the pairs above
+    clearScene2(scene, newVal);
+    //createSimulation1(scene);
+  });
 
 
-  }//end for every agent
+  // gui.add(guiVars, 'simulationType', 0, 2).onChange(function(newVal) {
+  //   createSimulation(scene, guiVars.simulationType);
+  // });
 
 
+  // var type = new guiVars();
+  // gui.add(type, 'simulation1');
+  // gui.add(type, 'simulation2');
 
-  // var material = new THREE.LineBasicMaterial({color: 0x00ff00});
-  // geometry = new THREE.Geometry();
+  // var folder1 = gui.addFolder("Simulation Type");
   //
-  // for(var q = 0; q < globalAgentsList.length; q++)
-  // {
-  //   for(var r = 0; r < globalAgentsList[q].markers.length; r++)
-  //   {
-  //     geometry.vertices.push(
-  //       new THREE.Vector3( globalAgentsList[q].position.x, globalAgentsList[q].position.y, globalAgentsList[q].position.z ),
-  //       new THREE.Vector3( globalAgentsList[q].markers[r].position.x, globalAgentsList[q].markers[r].position.y, globalAgentsList[q].markers[r].position.z )
-  //     );
-  //   }
-  // }
+  // folder1.add(guiVariables, "Simulation1").onChange(function(newVal) {
+  //   clearScene(scene);
+  //   createSimulation1(scene); //Simulation 1 - Red Agents VS Blue Agents - Works well with 20 markers
+  // });
   //
-  // var line = new THREE.LineSegments( geometry, material );
-  //scene.add( line );
+  // folder1.add(guiVariables, "Simulation2").onChange(function(newVal) {
+  //   clearScene(scene);
+  //   createSimulation2(scene);     //Simulation 2 - Blue Agents - Works well with 20 markers
+  // });
+  //
+  // folder1.add(guiVariables, "Simulation3").onChange(function(newVal) {
+  //   clearScene(scene);
+  //   createSimulation3(scene);
+  // });
+
 
 
 }//end onLoad
@@ -206,18 +155,8 @@ function onLoad(framework) {
   // ====================================================== ON UPDATE FUNCTION ======================================================
 // called on frame updates
 function onUpdate(framework) {
-
-
-
-  // if(geometry == null)
-  // {
-  //   onLoad(framework);
-  // }
-
-  //geometry.vertices = [];
-
-
   var deltaT = clock.getDelta();
+
 
   //for every agent
   for(var i = 0; i < globalAgentsList.length; i++)
@@ -261,9 +200,6 @@ function onUpdate(framework) {
               {
                 currMarker.agent = dist;
                 currAgent.markers.push(currMarker);
-
-                // var _line = new THREE.Vector3(currAgent.position.x - currMarker.position.x, currAgent.position.y - currMarker.position.y, currAgent.position.z - currMarker.position.z);
-                // geometry.vertices.push(_line);
               }
               else      //if marker is owned, but new dist is less than current one, update it
               {
@@ -271,10 +207,6 @@ function onUpdate(framework) {
                 {
                   currMarker.agent = dist;
                   currAgent.markers.push(currMarker);
-
-
-                  // var _line = new THREE.Vector3(currAgent.position.x - currMarker.position.x, currAgent.position.y - currMarker.position.y, currAgent.position.z - currMarker.position.z);
-                  // geometry.vertices.push(_line);
                 }
               }//end else
 
@@ -286,11 +218,6 @@ function onUpdate(framework) {
 
       }//end for grid cell y
     }//end for grid cell x
-
-
-    // geometry.verticesNeedUpdate = true;
-
-
 
 
 
@@ -348,15 +275,21 @@ function onUpdate(framework) {
       agentV = agentV.normalize() * velocityCap;
     }
 
+    //give the agents a little nudge towards goal in case they get stuck
+    if(agentV.length() < 0.003)
+    {
+      var factor = 0.001;
+      agentV = new THREE.Vector3(agentV.x + factor * (currAgent.goal.x - currAgent.position.x), agentV.y + factor * (currAgent.goal.y - currAgent.position.y), agentV.z + factor * (currAgent.goal.z - currAgent.position.z));
+
+      // agentV = new THREE.Vector3(agentV.x + (0.1 * currAgent.goal.x), agentV.y + (0.1 * currAgent.goal.y), agentV.z + (0.1 * currAgent.goal.z));   //(this shoots agents off the grid)
+    }
+
     //ONCE I GET THE FINAL POSITION, reassign the agent's mesh position to it
     currAgent.velocity = agentV;
     currAgent.position = new THREE.Vector3(currAgent.position.x + agentV.x, currAgent.position.y + agentV.y, currAgent.position.z + agentV.z);
     currAgent.mesh.position.set(currAgent.position.x, currAgent.position.y, currAgent.position.z);
 
   }//end for all agents
-
-
-
 
 
 }//end onUpdate
@@ -384,17 +317,7 @@ function Marker(id, pos, neighbors, agent)
   this.agent = agent;             //number (if it's -1, then no agent owns it, else an agent owns it)
 }
 
-// ====================================================== CELL CLASS ======================================================
-function Cell(startX, startY, endX, endY, markers)
-{
-  this.startX = startX;         //number
-  this.startY = startY;         //number
-  this.endX = endX;             //number
-  this.endY = endY;             //number
-  this.markers = markers;       //list
-}
-
-
+// ====================================================== GET CLOSEST CELLS ======================================================
 //find the domain and range of grid cell neighbors for each marker
 function getClosestCells(_currPos, gridDiv, gridW, gridH)
 {
@@ -460,30 +383,210 @@ function getClosestCells(_currPos, gridDiv, gridW, gridH)
 }
 
 
-// ====================================================== BIOCROWDS IMPLEMENTATION ======================================================
-function bioCrowds(agent)
+function clearScene(scene) {
+    var to_remove = [];
+
+    scene.traverse ( function( child ) {
+        if ( !child.userData.keepMe === true ) {
+            to_remove.push( child );
+         }
+    } );
+
+    for ( var i = 0; i < to_remove.length; i++ ) {
+        scene.remove( to_remove[i] );
+    }
+}
+
+function clearScene2(scene, val) {
+    var to_remove = [];
+
+    scene.traverse ( function( child ) {
+        if ( !child.userData.keepMe === true ) {
+            to_remove.push( child );
+         }
+    } );
+
+    for ( var i = 0; i < to_remove.length; i++ ) {
+        scene.remove( to_remove[i] );
+    }
+
+    //globalMarkersList = [];
+    globalAgentsList = [];
+    particles = [];
+
+    scatterMarkers(scene);
+
+    if(val == 1)
+    {
+      createSimulation1(scene);
+    }
+    else if(val == 2)
+    {
+      createSimulation2(scene);
+    }
+    else {
+      createSimulation3(scene);
+    }
+}
+
+function scatterMarkers(scene)
 {
+  var sampleDensity = 6;
+  var sqrtVal = gridDimension * sampleDensity;
+  var numSamples = sqrtVal * sqrtVal;
+  var invSqrtVal = 1.0 / (sqrtVal);
+  particles = new THREE.Geometry();
 
-  //check if agent has any markers
+  for(var i = 0; i < numSamples; i++)
+  {
+    var x = 1.0 * Math.floor(i % sqrtVal);
+    var y = 1.0 * Math.floor(i / sqrtVal);
+
+    var sample_X = (x + Math.random()) * gridDimension / sqrtVal;
+    var sample_Y = (y + Math.random()) * gridDimension / sqrtVal;
+
+    var sample = new THREE.Vector3(sample_X, 0.0, sample_Y);
+
+    var newMarker = new Marker(i, sample, [], -1);
+    globalMarkersList.push(newMarker);
+
+    particles.vertices.push(new THREE.Vector3(sample.x, sample.y, sample.z));
+  }//end for loop
+
+  var particleMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.15 } );
+  var particlesField = new THREE.Points(particles, particleMaterial);
+  //particlesField.userData = {keepMe: true};
+  scene.add(particlesField);
+}
+
+function createSimulation1(scene)
+{
+  globalAgentsList = [];
+  for(var i = 0; i < numAgents; i++)
+  {
+      //starting positions both groups of agents are opposite sides of each other, with goals being the other side
+      var startPos = null;
+      var startVel = null;
+      var goal = null;
+      var startOrient = null;
+      var radius = null;
+      var agentMarkers = null;  //THIS SHOULD CONSTANTLY BE CHANGING. NEED TO CREATE FUNCTION THAT GIVES AGENT ITS MARKERS
+      var agent = null;
+      var agentMesh = null;
+
+      startPos = new THREE.Vector3(i, 0.0, 0.0);    //for 10 markers: i * 2.0 + 1, 0.0, 0.0
+      goal = new THREE.Vector3(i, 0.0, gridDimension);
+
+      startVel = new THREE.Vector3(0.0, 0.0, 0.0);
+      startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
+      radius = 3;
+      agentMarkers = [];
+
+      //create new mesh for the agent and assign its position and orientation with the ones above
+      var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
+      var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
+      agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
+      agentMesh.position.set(startPos.x, startPos.y, startPos.z);
+      scene.add( agentMesh );
+
+      agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
+      globalAgentsList.push(agent);
+
+  }//end for every agent
+}
+
+function createSimulation2(scene)
+{
+  globalAgentsList = [];
+  for(var i = 0; i < numAgents; i++)
+  {
+    var startPos = null;
+    var startVel = null;
+    var goal = null;
+    var startOrient = null;
+    var radius = null;
+    var agentMarkers = null;
+    var agent = null;
+    var agentMesh = null;
+
+      if(i % 2 == 0)  //blue agents
+      {
+        startPos = new THREE.Vector3(i * 1.0 + 1.0, 0.0, 0.0);
+        goal = new THREE.Vector3(i * 1.0 + 1.0, 0.0, gridDimension);
+
+        startVel = new THREE.Vector3(0.0, 0.0, 0.0);
+        startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
+        radius = 3;
+        agentMarkers = [];
+
+        //create new mesh for the agent and assign its position and orientation with the ones above
+        var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
+        var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
+        agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
+        agentMesh.position.set(startPos.x, startPos.y, startPos.z);
+        scene.add( agentMesh );
+
+        agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
+        globalAgentsList.push(agent);
+      }//end if
+      else    //red agents
+      {
+        startPos = new THREE.Vector3(i * 1.0, 0.0, gridDimension);
+        goal = new THREE.Vector3(i * 1.0, 0.0, 0.0);
+
+        startVel = new THREE.Vector3(0.0, 0.0, 0.0);
+        startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
+        radius = 3;
+        agentMarkers = [];
+
+        //create new mesh for the agent and assign its position and orientation with the ones above
+        var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
+        var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+        agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
+        agentMesh.position.set(startPos.x, startPos.y, startPos.z);
+        scene.add( agentMesh );
+
+        agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
+        globalAgentsList.push(agent);
+      }//end else
+  }//end for loop
+}
 
 
-  //gather nearest points of the current agent
+function createSimulation3(scene)
+{
+  globalAgentsList = [];
+  for(var i = 0; i < numAgents; i++)
+  {
+      //starting positions both groups of agents are opposite sides of each other, with goals being the other side
+      var startPos = null;
+      var startVel = null;
+      var goal = null;
+      var startOrient = null;
+      var radius = null;
+      var agentMarkers = null;
+      var agent = null;
+      var agentMesh = null;
 
+      startPos = new THREE.Vector3(6 * Math.cos(Math.PI * i / 2.0) + gridDimension / 2, 0.0, 6 * Math.sin(Math.PI * i / 2.0) + gridDimension / 2);
+      goal = new THREE.Vector3(gridDimension / 2, 0, gridDimension / 2);
 
-  //accumulate marker influences
-  /*
-      w = (1 + cos(theta)) / (1 + ||m||)
-  */
+      startVel = new THREE.Vector3(0.0, 0.0, 0.0);
+      startOrient = new THREE.Vector3(goal.x - startPos.x, goal.y - startPos.y, goal.z - startPos.z);
+      radius = 3;
+      agentMarkers = [];
 
+      //create new mesh for the agent and assign its position and orientation with the ones above
+      var cylinderGeo = new THREE.CylinderGeometry( agentMeshRadius, agentMeshRadius, agentMeshRadius);    //radius top, radius bottom, height, radius segments, height segments
+      var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
+      agentMesh = new THREE.Mesh( cylinderGeo, cylinderMaterial );
+      agentMesh.position.set(startPos.x, startPos.y, startPos.z);
+      scene.add( agentMesh );
 
-  //compute weighted average of marker influences
-  /*
-      v_i = m_i * (weight(m_i, G)) / (sum of all j's --> weight(m_j, G))
+      agent = new Agent(startPos, startVel, goal, startOrient, radius, agentMarkers, agentMesh);
+      globalAgentsList.push(agent);
 
-      v = sum of all j's --> v_j
-  */
-
-
+  }//end for every agent
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
