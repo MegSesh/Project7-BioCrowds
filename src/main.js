@@ -31,7 +31,6 @@ var guiVariables = {
   SimulationType : 1
 }
 
-
 // ====================================================== ON LOAD FUNCTION ======================================================
 // called after the scene loads
 function onLoad(framework) {
@@ -50,7 +49,6 @@ function onLoad(framework) {
   gui.add(camera, 'fov', 0, 180).onChange(function(newVal) {
     camera.updateProjectionMatrix();
   });
-
 
 
   // ========================== SCENE SET UP ==========================
@@ -80,74 +78,12 @@ function onLoad(framework) {
   scene.add( grid );
 
 
-
-  // ========================== CREATE AND SCATTER MARKERS ==========================
-  //scatter points randomly on grid using stratified sampling
-  // var sampleDensity = 6;
-  // var sqrtVal = gridDimension * sampleDensity;
-  // var numSamples = sqrtVal * sqrtVal;
-  // var invSqrtVal = 1.0 / (sqrtVal);
-  // particles = new THREE.Geometry();
-  //
-  // for(var i = 0; i < numSamples; i++)
-  // {
-  //   var x = 1.0 * Math.floor(i % sqrtVal);
-  //   var y = 1.0 * Math.floor(i / sqrtVal);
-  //
-  //   var sample_X = (x + Math.random()) * gridDimension / sqrtVal;
-  //   var sample_Y = (y + Math.random()) * gridDimension / sqrtVal;
-  //
-  //   var sample = new THREE.Vector3(sample_X, 0.0, sample_Y);
-  //
-  //   var newMarker = new Marker(i, sample, [], -1);
-  //   globalMarkersList.push(newMarker);
-  //
-  //   particles.vertices.push(new THREE.Vector3(sample.x, sample.y, sample.z));
-  // }//end for loop
-  //
-  // var particleMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.15 } );
-  // var particlesField = new THREE.Points(particles, particleMaterial);
-  // particlesField.userData = {keepMe: true};
-  // scene.add(particlesField);
-
-
-  // ========================== SPAWN AGENTS ==========================
+  // ========================== START SIMULATIONS ==========================
   //spawn agents with specified goal points
 
-
   gui.add(guiVariables, 'SimulationType', { Simulation1 : 1, Simulation2 : 2, Simulation3 : 3} ).onChange(function(newVal) {
-    //new val gets set to the value in the pairs above
     clearScene2(scene, newVal);
-    //createSimulation1(scene);
   });
-
-
-  // gui.add(guiVars, 'simulationType', 0, 2).onChange(function(newVal) {
-  //   createSimulation(scene, guiVars.simulationType);
-  // });
-
-
-  // var type = new guiVars();
-  // gui.add(type, 'simulation1');
-  // gui.add(type, 'simulation2');
-
-  // var folder1 = gui.addFolder("Simulation Type");
-  //
-  // folder1.add(guiVariables, "Simulation1").onChange(function(newVal) {
-  //   clearScene(scene);
-  //   createSimulation1(scene); //Simulation 1 - Red Agents VS Blue Agents - Works well with 20 markers
-  // });
-  //
-  // folder1.add(guiVariables, "Simulation2").onChange(function(newVal) {
-  //   clearScene(scene);
-  //   createSimulation2(scene);     //Simulation 2 - Blue Agents - Works well with 20 markers
-  // });
-  //
-  // folder1.add(guiVariables, "Simulation3").onChange(function(newVal) {
-  //   clearScene(scene);
-  //   createSimulation3(scene);
-  // });
-
 
 
 }//end onLoad
@@ -382,21 +318,6 @@ function getClosestCells(_currPos, gridDiv, gridW, gridH)
   return neighbors;
 }
 
-
-function clearScene(scene) {
-    var to_remove = [];
-
-    scene.traverse ( function( child ) {
-        if ( !child.userData.keepMe === true ) {
-            to_remove.push( child );
-         }
-    } );
-
-    for ( var i = 0; i < to_remove.length; i++ ) {
-        scene.remove( to_remove[i] );
-    }
-}
-
 function clearScene2(scene, val) {
     var to_remove = [];
 
@@ -410,7 +331,7 @@ function clearScene2(scene, val) {
         scene.remove( to_remove[i] );
     }
 
-    //globalMarkersList = [];
+    //refresh the lists before each simulation
     globalAgentsList = [];
     particles = [];
 
@@ -568,7 +489,10 @@ function createSimulation3(scene)
       var agent = null;
       var agentMesh = null;
 
-      startPos = new THREE.Vector3(6 * Math.cos(Math.PI * i / 2.0) + gridDimension / 2, 0.0, 6 * Math.sin(Math.PI * i / 2.0) + gridDimension / 2);
+      var circleRadius = 8;
+      startPos = new THREE.Vector3(circleRadius * Math.cos(Math.PI * i / 2.0) + gridDimension / 2,
+                                    0.0,
+                                    circleRadius * Math.sin(Math.PI * i / 2.0) + gridDimension / 2);
       goal = new THREE.Vector3(gridDimension / 2, 0, gridDimension / 2);
 
       startVel = new THREE.Vector3(0.0, 0.0, 0.0);
